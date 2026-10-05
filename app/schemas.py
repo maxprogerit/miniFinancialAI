@@ -1,3 +1,5 @@
+from datetime import date
+
 from pydantic import BaseModel, Field
 
 class SpendingSummary(BaseModel):
@@ -83,3 +85,17 @@ class ChatResponse(BaseModel):
     usage: UsageInfo = Field(
         description="Token usage for this request, summed across all tool-calling rounds."
     )
+
+
+class TransactionImportRow(BaseModel):
+    merchant: str = Field(min_length=1)
+    amount: float = Field(gt=0)
+    currency: str = Field(min_length=3, max_length=3)
+    category: str = Field(min_length=1)
+    transaction_date: date
+
+
+class TransactionImportResult(BaseModel):
+    imported: int = Field(description="Number of rows successfully imported")
+    skipped: int = Field(description="Number of rows rejected by validation")
+    errors: list[str] = Field(description="One message per skipped row, in file order")
