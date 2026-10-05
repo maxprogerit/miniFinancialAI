@@ -55,8 +55,21 @@ def chat(request: ChatRequest, user_id: int = Depends(require_user)) -> ChatResp
         else []
     )
 
+    logger.info(
+        "chat_completed",
+        extra={
+            "extra_fields": {
+                "user_id": user_id,
+                "tool_calls": result.tool_calls,
+                "input_tokens": result.input_tokens,
+                "output_tokens": result.output_tokens,
+                "total_tokens": result.total_tokens,
+            }
+        },
+    )
+
     return ChatResponse(
-        answer=result.answer,
+        answer=result.answer, # type: ignore
         tool_calls=result.tool_calls,
         sources=sources,
         usage=UsageInfo(

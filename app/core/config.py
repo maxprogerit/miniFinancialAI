@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     openai_api_key: str
     openai_model: str = "gpt-5.6-luna"
     openai_embedding_model: str = "text-embedding-3-small"
+    openai_timeout_seconds: float = 30.0
     database_url: str
     rag_top_k: int = 3
     jwt_secret: str

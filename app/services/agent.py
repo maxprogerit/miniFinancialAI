@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from app.core.config import settings
 from app.tools import TOOLS_BY_NAME, OPENAI_TOOLS
 
-client = OpenAI(api_key=settings.openai_api_key)
+client = OpenAI(api_key=settings.openai_api_key, timeout=settings.openai_timeout_seconds)
 
 
 @dataclass
