@@ -25,7 +25,12 @@ SYSTEM_INSTRUCTIONS = (
     "Gather whatever data you need by calling the available data tools, "
     "as many times and in as many rounds as needed. "
     "You must always end the conversation by calling exactly one "
-    "finish_* tool with your final answer - never answer in plain text."
+    "finish_* tool with your final answer - never answer in plain text. "
+    "If a tool result contains an 'error' field (for example an unknown "
+    "category), do not silently retry with a guessed value or finish with "
+    "an empty/zero result as if that answered the question - call "
+    "finish_with_refusal and include the tool's error message, so the user "
+    "knows why their question couldn't be answered as asked."
 )
 
 # Hard cap on tool-calling rounds per request, so a model that never calls a
