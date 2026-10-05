@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from app.core.current_user import set_current_user_id
 from app.core.deps import require_user
+from app.core.rate_limit import enforce_chat_rate_limit
 from app.schemas import ChatResponse, KnowledgeAnswer, UsageInfo
 from app.services.agent import ask_ai
 
@@ -30,6 +31,7 @@ class ChatRequest(BaseModel):
 )
 def chat(request: ChatRequest, user_id: int = Depends(require_user)) -> ChatResponse:
     set_current_user_id(user_id)
+    enforce_chat_rate_limit(user_id)
     try:
         result = ask_ai(request.message)
     except (ValueError, RuntimeError) as e:

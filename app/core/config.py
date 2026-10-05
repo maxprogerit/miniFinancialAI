@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     rag_top_k: int = 3
     jwt_secret: str
     jwt_access_token_expire_minutes: int = 60
+    chat_rate_limit_per_minute: int = 20
 
 
 settings = Settings()  # type: ignore[call-arg]
