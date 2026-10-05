@@ -83,7 +83,13 @@ def main():
                 "ALTER TABLE documents ADD COLUMN IF NOT EXISTS chunk_index INTEGER NOT NULL DEFAULT 0;"
             )
 
-            cur.execute("TRUNCATE documents;")
+            # Idempotent and leaves user-uploaded notes (user_id IS NOT NULL)
+            # alone - safe to run on every container start (see Dockerfile),
+            # not just once by hand.
+            cur.execute("SELECT count(*) FROM documents WHERE user_id IS NULL;")
+            if cur.fetchone()[0] > 0: # type: ignore
+                print("Shared knowledge documents already seeded, skipping.")
+                return
 
             for source, content in DOCUMENTS:
                 embedding = embed_text(content)

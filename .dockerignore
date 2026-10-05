@@ -1,0 +1,11 @@
+.venv/
+.git/
+.gitignore
+__pycache__/
+*.pyc
+.idea/
+.claude/
+.vscode-shared/
+miniRag/
+eval/results.md
+.pytest_cache/

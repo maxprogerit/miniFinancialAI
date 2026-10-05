@@ -10,6 +10,30 @@ services:
       - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Postgres only runs files here on a brand-new (empty) data directory -
+      # this is what actually creates the schema + demo users/transactions
+      # on a clean `docker compose up`, not something run by the app.
+      - ./app/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: minifinancial-api
+    env_file: .env
+    environment:
+      # Inside the Docker network the DB is reachable at the "postgres"
+      # service name on its container port (5432), not localhost:5434 -
+      # that host-side mapping is only for connecting from outside Docker.
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/financialdb
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:
