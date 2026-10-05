@@ -13,7 +13,10 @@ if __name__ == "__main__":
             break
 
         try:
-            answer, previous_response_id = ask_ai(user_message, previous_response_id)
-            print("\nAI: ", answer)
+            result = ask_ai(user_message, previous_response_id)
+            previous_response_id = result.response_id
+            print("\nAI: ", result.answer)
+            print("Tools used:", result.tool_calls)
+            print("Tokens:", result.total_tokens)
         except Exception as e:
             print("\nERROR:", type(e).__name__, e)

@@ -51,3 +51,35 @@ class ComparisonResult(BaseModel):
     overall_total: float
     currency: str
     percentage: float
+
+
+class UsageInfo(BaseModel):
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+
+
+AnswerPayload = (
+    SpendingSummary
+    | TransactionList
+    | TotalSpending
+    | CategoryList
+    | KnowledgeAnswer
+    | Refusal
+    | ComparisonResult
+)
+
+
+class ChatResponse(BaseModel):
+    answer: AnswerPayload = Field(
+        description="The structured answer, shaped by whichever finish_* tool the agent called."
+    )
+    tool_calls: list[str] = Field(
+        description="Names of every tool the agent called, in call order, including the finish_* tool."
+    )
+    sources: list[str] = Field(
+        description="Document sources cited for this answer, if any (non-empty only for knowledge-base answers)."
+    )
+    usage: UsageInfo = Field(
+        description="Token usage for this request, summed across all tool-calling rounds."
+    )

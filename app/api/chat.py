@@ -1,16 +1,13 @@
+import logging
+
+import openai
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.schemas import ChatResponse, KnowledgeAnswer, UsageInfo
 from app.services.agent import ask_ai
-from app.schemas import (
-    SpendingSummary,
-    TransactionList,
-    TotalSpending,
-    CategoryList,
-    KnowledgeAnswer,
-    Refusal,
-    ComparisonResult
-)
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -19,22 +16,47 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1)
 
 
-ChatResponse = (
-    SpendingSummary
-    | TransactionList
-    | TotalSpending
-    | CategoryList
-    | KnowledgeAnswer
-    | Refusal
-    | ComparisonResult
+@router.post(
+    "/chat",
+    response_model=ChatResponse,
+    summary="Ask the financial assistant a question",
+    description=(
+        "Runs the user's message through the tool-calling agent and returns a "
+        "structured answer, the tools the agent used to produce it, any cited "
+        "document sources, and token usage for the request."
+    ),
 )
-
-
-@router.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
-
     try:
-        answer, _ = ask_ai(request.message)
-        return answer # type: ignore
-    except ValueError as e:
+        result = ask_ai(request.message)
+    except (ValueError, RuntimeError) as e:
         raise HTTPException(status_code=422, detail=str(e))
+    except openai.OpenAIError:
+        logger.exception("OpenAI API call failed while handling /chat")
+        raise HTTPException(
+            status_code=503,
+            detail="The AI service is temporarily unavailable. Please try again.",
+        )
+    except Exception:
+        logger.exception("Unexpected error while handling /chat")
+        raise HTTPException(
+            status_code=500,
+            detail="Something went wrong while processing your request.",
+        )
+
+    sources = (
+        result.answer.sources
+        if isinstance(result.answer, KnowledgeAnswer)
+        else []
+    )
+
+    return ChatResponse(
+        answer=result.answer,
+        tool_calls=result.tool_calls,
+        sources=sources,
+        usage=UsageInfo(
+            input_tokens=result.input_tokens,
+            output_tokens=result.output_tokens,
+            total_tokens=result.total_tokens,
+        ),
+    )
