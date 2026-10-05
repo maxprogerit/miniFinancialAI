@@ -29,3 +29,17 @@ INSERT INTO transactions
 VALUES
 (2, 'Apple', 3000, 'EUR', 'electronics', '2026-08-03');
 
+-- RAG document chunks. user_id NULL = shared app knowledge (seeded by
+-- seed_documents.py, which also computes the real embeddings - this file
+-- only defines the shape, it can't generate vectors on its own).
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS documents (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER,
+    source TEXT NOT NULL,
+    chunk_index INTEGER NOT NULL DEFAULT 0,
+    content TEXT NOT NULL,
+    embedding VECTOR(1536) NOT NULL
+);
+

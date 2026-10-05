@@ -6,11 +6,13 @@ from .base import Tool
 SEARCH_FINANCIAL_KNOWLEDGE = Tool(
     name="search_financial_knowledge",
     description=(
-        "Search general financial knowledge and app documentation - "
-        "budgeting concepts, definitions (e.g. emergency fund, gross "
-        "vs net income), how this app's categories or calculations "
-        "work. Use this for general financial questions, NOT for the "
-        "current user's own transaction data."
+        "Search general financial knowledge/app documentation AND the "
+        "current user's own uploaded notes - budgeting concepts, "
+        "definitions (e.g. emergency fund, gross vs net income), how this "
+        "app's categories or calculations work, and anything the user has "
+        "personally uploaded via /documents. Use this for general "
+        "financial questions or questions about the user's notes, NOT for "
+        "their transaction data (use the transaction tools for that)."
     ),
     parameters={
         "type": "object",

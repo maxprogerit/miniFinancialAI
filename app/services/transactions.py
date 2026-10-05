@@ -3,10 +3,9 @@ import io
 
 from pydantic import ValidationError
 
+from app.core.current_user import get_current_user_id
 from app.db.database import get_connection
 from app.schemas import TransactionImportRow
-
-CURRENT_USER_ID = 1
 
 
 def list_current_user_categories() -> list:
@@ -19,7 +18,7 @@ def list_current_user_categories() -> list:
                 WHERE user_id = %s
                 ORDER BY category;
                 """,
-                (CURRENT_USER_ID,)
+                (get_current_user_id(),)
             )
             rows = cur.fetchall()
     return [row[0] for row in rows]
@@ -67,7 +66,7 @@ def list_current_user_transactions(category: str | None = None) -> list[dict]:
                         AND category = %s
                     ORDER BY transaction_date DESC;
                     """,
-                    (CURRENT_USER_ID, category)
+                    (get_current_user_id(), category)
                 )
             else:
                 cur.execute(
@@ -77,7 +76,7 @@ def list_current_user_transactions(category: str | None = None) -> list[dict]:
                     WHERE user_id = %s
                     ORDER BY transaction_date DESC;
                     """,
-                    (CURRENT_USER_ID,)
+                    (get_current_user_id(),)
                 )
             rows = cur.fetchall()
 
@@ -103,7 +102,7 @@ def calculate_category_spending(category: str) -> dict:
                   AND category = %s
                 GROUP BY currency;
                 """,
-                (CURRENT_USER_ID, category)
+                (get_current_user_id(), category)
             )
             rows = cur.fetchall()
 
@@ -136,7 +135,7 @@ def get_current_user_total_spending() -> dict:
                 WHERE user_id = %s
                 GROUP BY currency;
                 """,
-                (CURRENT_USER_ID,)
+                (get_current_user_id(),)
             )
             rows = cur.fetchall()
 
@@ -179,7 +178,7 @@ def import_current_user_transactions(rows: list[dict]) -> None:
                 """,
                 [
                     (
-                        CURRENT_USER_ID,
+                        get_current_user_id(),
                         row["merchant"],
                         row["amount"],
                         row["currency"],

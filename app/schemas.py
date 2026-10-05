@@ -99,3 +99,8 @@ class TransactionImportResult(BaseModel):
     imported: int = Field(description="Number of rows successfully imported")
     skipped: int = Field(description="Number of rows rejected by validation")
     errors: list[str] = Field(description="One message per skipped row, in file order")
+
+
+class DocumentUploadResult(BaseModel):
+    source: str = Field(description="The identifier this document is stored and cited under")
+    chunks_stored: int = Field(description="Number of chunks the document was split into")

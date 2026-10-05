@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-5.6-luna"
     openai_embedding_model: str = "text-embedding-3-small"
     database_url: str
+    rag_top_k: int = 3
 
 
 settings = Settings()  # type: ignore[call-arg]

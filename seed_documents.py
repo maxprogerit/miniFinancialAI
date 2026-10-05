@@ -63,6 +63,11 @@ def main():
         register_vector(conn)
 
         with conn.cursor() as cur:
+            # user_id is nullable: NULL = shared app knowledge visible to
+            # every user (what this script seeds), a real id = a user's own
+            # uploaded note (via POST /documents). ADD COLUMN IF NOT EXISTS
+            # so this stays safe to re-run against a database created
+            # before user_id/chunk_index existed.
             cur.execute(
                 """
                 CREATE TABLE IF NOT EXISTS documents (
@@ -73,6 +78,10 @@ def main():
                 );
                 """
             )
+            cur.execute("ALTER TABLE documents ADD COLUMN IF NOT EXISTS user_id INTEGER;")
+            cur.execute(
+                "ALTER TABLE documents ADD COLUMN IF NOT EXISTS chunk_index INTEGER NOT NULL DEFAULT 0;"
+            )
 
             cur.execute("TRUNCATE documents;")
 
@@ -80,13 +89,13 @@ def main():
                 embedding = embed_text(content)
                 cur.execute(
                     """
-                    INSERT INTO documents (source, content, embedding)
-                    VALUES (%s, %s, %s);
+                    INSERT INTO documents (user_id, source, chunk_index, content, embedding)
+                    VALUES (NULL, %s, 0, %s, %s);
                     """,
                     (source, content, Vector(embedding))
                 )
 
-    print(f"Seeded {len(DOCUMENTS)} documents.")
+    print(f"Seeded {len(DOCUMENTS)} shared knowledge documents.")
 
 
 if __name__ == "__main__":
