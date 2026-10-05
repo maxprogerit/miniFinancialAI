@@ -3,4 +3,5 @@
 __pycache__/
 .idea/
 .claude/
-miniRag/
+.pytest_cache/
+eval/results.md
