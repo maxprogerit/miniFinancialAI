@@ -1,6 +1,22 @@
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Demo accounts matching the seeded transactions below (user 1 = full demo
+-- data, user 2 = isolation-testing only). Both passwords are DemoPass123!
+INSERT INTO users (id, email, password_hash) VALUES
+(1, 'demo1@example.com', '$2b$12$4y4QWNlEs0ch/p6MjgeKduD0taWFkTK6t5mOdx8pPUAwq5uQ9WrR.'),
+(2, 'demo2@example.com', '$2b$12$wm8u0.q1.MmnKro/EArwZuj.Nc1vZWnI5Dogl0mAc2v3efDJDY2JW');
+
+-- Keep the SERIAL sequence past the ids we inserted explicitly above.
+SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
+
 CREATE TABLE IF NOT EXISTS transactions (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL REFERENCES users(id),
     merchant TEXT NOT NULL,
     amount NUMERIC(12, 2) NOT NULL,
     currency VARCHAR(3) NOT NULL,
@@ -36,10 +52,9 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE IF NOT EXISTS documents (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER,
+    user_id INTEGER REFERENCES users(id),
     source TEXT NOT NULL,
     chunk_index INTEGER NOT NULL DEFAULT 0,
     content TEXT NOT NULL,
     embedding VECTOR(1536) NOT NULL
 );
-

@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     openai_embedding_model: str = "text-embedding-3-small"
     database_url: str
     rag_top_k: int = 3
+    jwt_secret: str
+    jwt_access_token_expire_minutes: int = 60
 
 
 settings = Settings()  # type: ignore[call-arg]

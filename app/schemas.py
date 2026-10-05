@@ -1,6 +1,6 @@
 from datetime import date
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 class SpendingSummary(BaseModel):
     total: float = Field(
@@ -104,3 +104,18 @@ class TransactionImportResult(BaseModel):
 class DocumentUploadResult(BaseModel):
     source: str = Field(description="The identifier this document is stored and cited under")
     chunks_stored: int = Field(description="Number of chunks the document was split into")
+
+
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"

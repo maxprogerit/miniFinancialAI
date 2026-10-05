@@ -1,5 +1,7 @@
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 
+from app.core.current_user import set_current_user_id
+from app.core.deps import require_user
 from app.schemas import TransactionImportResult, TransactionList
 from app.services.transactions import import_transactions_csv, list_current_user_transactions
 
@@ -20,7 +22,9 @@ def list_transactions(
         default=None,
         description="Optional spending category filter, e.g. 'electronics'.",
     ),
+    user_id: int = Depends(require_user),
 ) -> TransactionList:
+    set_current_user_id(user_id)
     try:
         rows = list_current_user_transactions(category)
     except ValueError as e:
@@ -41,7 +45,11 @@ def list_transactions(
         "imported."
     ),
 )
-async def import_transactions(file: UploadFile = File(...)) -> TransactionImportResult:
+async def import_transactions(
+    file: UploadFile = File(...),
+    user_id: int = Depends(require_user),
+) -> TransactionImportResult:
+    set_current_user_id(user_id)
     content = await file.read()
     result = import_transactions_csv(content.decode("utf-8"))
     return TransactionImportResult(**result)

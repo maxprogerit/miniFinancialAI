@@ -1,5 +1,7 @@
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
+from app.core.current_user import set_current_user_id
+from app.core.deps import require_user
 from app.schemas import DocumentUploadResult
 from app.services.documents import ingest_document
 
@@ -17,7 +19,12 @@ router = APIRouter()
         "right now - PDF support is not implemented yet."
     ),
 )
-async def upload_document(file: UploadFile = File(...)) -> DocumentUploadResult:
+async def upload_document(
+    file: UploadFile = File(...),
+    user_id: int = Depends(require_user),
+) -> DocumentUploadResult:
+    set_current_user_id(user_id)
+
     if not file.filename or not file.filename.lower().endswith(".txt"):
         raise HTTPException(
             status_code=422,
