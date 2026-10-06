@@ -70,13 +70,29 @@ def test_list_current_user_categories():
 
 
 def test_list_current_user_transactions_no_filter_returns_all():
-    assert len(list_current_user_transactions()) == 11
+    rows, total = list_current_user_transactions()
+    assert len(rows) == 11
+    assert total == 11
 
 
 def test_list_current_user_transactions_filtered():
-    rows = list_current_user_transactions("sport")
+    rows, total = list_current_user_transactions("sport")
     assert len(rows) == 1
+    assert total == 1
     assert rows[0]["merchant"] == "Swimming Pool"
+
+
+def test_list_current_user_transactions_pagination():
+    page1, total1 = list_current_user_transactions(limit=5, offset=0)
+    page2, total2 = list_current_user_transactions(limit=5, offset=5)
+    assert len(page1) == 5
+    assert len(page2) == 5
+    assert total1 == total2 == 11
+    # Merchant names can repeat (two Amazon rows, two Supermarket rows), so
+    # identity is checked via date+amount+merchant together, not name alone.
+    page1_keys = {(t["date"], t["amount"], t["merchant"]) for t in page1}
+    page2_keys = {(t["date"], t["amount"], t["merchant"]) for t in page2}
+    assert page1_keys.isdisjoint(page2_keys)
 
 
 def test_different_users_see_different_totals():

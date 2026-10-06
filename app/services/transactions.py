@@ -51,40 +51,49 @@ def _rows_to_transactions(rows) -> list[dict]:
     ]
 
 
-def list_current_user_transactions(category: str | None = None) -> list[dict]:
+def list_current_user_transactions(
+    category: str | None = None,
+    limit: int | None = None,
+    offset: int = 0,
+) -> tuple[list[dict], int]:
+    """Returns (rows, total_matching_count). total ignores limit/offset, so
+    callers that paginate (the REST endpoint) can report how many pages
+    there are; callers that don't (the LLM tool) just get everything back
+    when limit is left as None.
+    """
     if category is not None:
         category = resolve_category(category)
 
+    user_id = get_current_user_id()
+    where_clause = "WHERE user_id = %s"
+    params: list = [user_id]
+    if category is not None:
+        where_clause += " AND category = %s"
+        params.append(category)
+
     with get_connection() as conn:
         with conn.cursor() as cur:
-            if category is not None:
-                cur.execute(
-                    """
-                    SELECT merchant, amount, currency, category, transaction_date
-                    FROM transactions
-                    WHERE user_id = %s
-                        AND category = %s
-                    ORDER BY transaction_date DESC;
-                    """,
-                    (get_current_user_id(), category)
-                )
-            else:
-                cur.execute(
-                    """
-                    SELECT merchant, amount, currency, category, transaction_date
-                    FROM transactions
-                    WHERE user_id = %s
-                    ORDER BY transaction_date DESC;
-                    """,
-                    (get_current_user_id(),)
-                )
+            cur.execute(f"SELECT count(*) FROM transactions {where_clause};", params)
+            total = cur.fetchone()[0] # type: ignore
+
+            query = (
+                "SELECT merchant, amount, currency, category, transaction_date "
+                f"FROM transactions {where_clause} ORDER BY transaction_date DESC"
+            )
+            query_params = list(params)
+            if limit is not None:
+                query += " LIMIT %s OFFSET %s"
+                query_params += [limit, offset]
+
+            cur.execute(query + ";", query_params)
             rows = cur.fetchall()
 
-    return _rows_to_transactions(rows)
+    return _rows_to_transactions(rows), total
 
 
 def search_current_user_transactions(category: str) -> list[dict]:
-    return list_current_user_transactions(category)
+    rows, _ = list_current_user_transactions(category)
+    return rows
 
 
 def calculate_category_spending(category: str) -> dict:
