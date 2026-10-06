@@ -69,7 +69,7 @@ what makes the response structured rather than free text.
 | Alembic migrations | Done - hand-written (no ORM models), see design decisions below |
 | CORS, `GET /health` with a real DB check + container healthcheck | Done |
 | **Cost ($) per request** | **Not implemented** - token counts are logged; a $ figure would need pricing data this project can't currently verify as current |
-| **CI pipeline** | **Not implemented** |
+| CI pipeline (GitHub Actions) | Done - runs migrations + the non-live test suite against a real Postgres service container on every push/PR |
 | **Frontend** | **Not implemented** - this is an API-only backend |
 | Swagger screenshots | **Not included** - no browser-automation tool was available while writing this; the live docs at `/docs` are the real artifact |
 
@@ -152,7 +152,7 @@ Example `/chat` response shape:
 ```bash
 pip install -r requirements.txt
 
-pytest -m "not live"   # 32 tests, fully local/mocked LLM, fast
+pytest -m "not live"   # 38 tests, fully local/mocked LLM, fast
 pytest -m live         # 2 tests that hit the real OpenAI API
 pytest                 # everything
 
@@ -161,6 +161,11 @@ python eval/run_eval.py   # 25 real questions against the live agent, writes eva
 
 Tests and the eval script both need the dev stack running (`docker compose up`)
 with the demo users seeded.
+
+CI (`.github/workflows/tests.yml`) runs `pytest -m "not live"` against a
+real Postgres service container on every push/PR - add a status badge
+here once this is pushed to a real GitHub repo
+(`https://github.com/<owner>/<repo>/actions/workflows/tests.yml/badge.svg`).
 
 ## Design decisions & trade-offs
 
@@ -235,7 +240,10 @@ the same way `/chat` is called here.
 
 - Fixed 60-minute access token expiry, no refresh tokens.
 - Rate limiting is per-process, in-memory (see trade-offs above).
-- No CI pipeline configured.
+- CI runs the non-live suite only - the 2 `@pytest.mark.live` tests that
+  hit the real OpenAI API need a real `OPENAI_API_KEY`, which isn't
+  configured as a repo secret (would mean spending real money on every
+  push).
 - No Swagger screenshots in this README (see the table above).
 - The eval script's RAG correctness check is keyword-based, not graded by
   a second model.

@@ -1,0 +1,52 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: financialdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/financialdb
+      # Placeholder, not a real key: only @pytest.mark.live tests make real
+      # OpenAI calls, and this workflow deliberately excludes those (no
+      # OPENAI_API_KEY secret to spend real money on every push). Settings
+      # still requires the field to be set for the app to import at all.
+      OPENAI_API_KEY: sk-test-placeholder-not-a-real-key
+      JWT_SECRET: test-secret-for-ci-only-not-used-for-anything-real-00000000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Apply database migrations
+        run: alembic upgrade head
+
+      - name: Seed demo data
+        run: python seed_demo_data.py
+
+      - name: Run tests (excluding real-OpenAI-call tests)
+        run: pytest -m "not live"
