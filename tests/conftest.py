@@ -16,8 +16,7 @@ def client():
 
 @pytest.fixture(autouse=True)
 def _reset_rate_limit_state():
-    # The limiter's counters are process-wide, so one test's /chat calls
-    # would otherwise bleed into the next test's rate-limit budget.
+    # Limiter state is process-wide; reset between tests.
     rate_limit_mod._request_times.clear()
     yield
     rate_limit_mod._request_times.clear()

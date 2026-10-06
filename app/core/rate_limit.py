@@ -13,13 +13,7 @@ _request_times: dict[int, deque] = defaultdict(deque)
 
 
 def enforce_chat_rate_limit(user_id: int) -> None:
-    """Sliding-window limit, per authenticated user (not per IP - with real
-    auth in place, user_id is a far more meaningful key than an IP address,
-    which can be shared or spoofed behind a proxy).
-
-    In-memory and per-process - fine for this single-process app, but would
-    need a shared store (e.g. Redis) behind multiple workers/instances.
-    """
+    """Per-user sliding-window limit. In-memory, per-process."""
     now = time.monotonic()
 
     with _lock:

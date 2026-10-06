@@ -29,9 +29,7 @@ class TransactionList(BaseModel):
 
 
 class TransactionPage(BaseModel):
-    """GET /transactions's response - distinct from TransactionList because
-    pagination metadata is meaningless on the finish_with_transaction_list
-    tool path (the LLM never paginates, it just returns what it found)."""
+    """Paginated GET /transactions response (kept separate from the LLM tool schema)."""
     transactions: list[Transaction]
     total: int = Field(description="Total matching rows, ignoring limit/offset")
     limit: int

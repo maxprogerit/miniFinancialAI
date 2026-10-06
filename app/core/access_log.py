@@ -8,12 +8,7 @@ logger = logging.getLogger("app.access")
 
 
 class AccessLogMiddleware(BaseHTTPMiddleware):
-    """Logs method/path/status/duration for every request.
-
-    Deliberately does not log the request body (the user's /chat message,
-    uploaded file contents) or the Authorization header - request/response
-    content is noted as off-limits for these logs, path and timing aren't.
-    """
+    """Logs method/path/status/duration only - never bodies or auth headers."""
 
     async def dispatch(self, request: Request, call_next):
         start = time.monotonic()

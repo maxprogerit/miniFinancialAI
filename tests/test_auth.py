@@ -1,8 +1,4 @@
-"""Auth service unit tests: register/login edge cases, JWT validation.
-
-Requires the dev stack running (needs the real users table + demo1 seed
-user). Registration tests create a throwaway user and delete it afterward.
-"""
+"""Auth service tests: register/login edge cases and JWT validation."""
 import time
 import uuid
 
@@ -49,8 +45,7 @@ def test_login_wrong_password_rejected():
 
 
 def test_login_unknown_email_rejected_with_same_message_as_wrong_password():
-    # Deliberately indistinguishable from a wrong password - confirming an
-    # email is/isn't registered is its own information leak.
+    # Same message as a wrong password.
     with pytest.raises(ValueError, match="Invalid email or password"):
         authenticate_user("nobody-here@example.com", "whatever")
 
@@ -79,16 +74,14 @@ def test_refresh_token_roundtrip():
 
 
 def test_access_token_rejected_as_refresh_token():
-    # A leaked access token must not double as a refresh token - it carries
-    # type=access, so decode_refresh_token must reject it outright.
+    # An access token must not work as a refresh token.
     token = create_access_token(1)
     with pytest.raises(ValueError, match="Invalid or expired refresh token"):
         decode_refresh_token(token)
 
 
 def test_refresh_token_rejected_as_access_token():
-    # And the reverse: a refresh token must not work directly against
-    # endpoints that expect an access token.
+    # And the reverse.
     token = create_refresh_token(1)
     with pytest.raises(ValueError, match="Invalid or expired token"):
         decode_access_token(token)

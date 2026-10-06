@@ -1,14 +1,10 @@
-"""Document upload tests: text extraction (.txt and real .pdf bytes, not
-mocked) plus the API-level happy/error paths (ingest_document mocked there
-- embeddings/DB writes are covered by the RAG tests elsewhere)."""
+"""Document upload tests: text extraction and API paths."""
 import app.api.documents as documents_api
 from app.services.documents import extract_text
 
 
 def _minimal_pdf(text: str) -> bytes:
-    """Hand-built single-page PDF with one text-showing content stream -
-    good enough for pypdf to extract `text` back out, without pulling in
-    a PDF-generation library just for test fixtures."""
+    """Minimal single-page PDF for extraction tests."""
     content_stream = f"BT /F1 12 Tf 10 50 Td ({text}) Tj ET".encode()
     objects = [
         b"<</Type/Catalog/Pages 2 0 R>>",

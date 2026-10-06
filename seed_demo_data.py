@@ -1,9 +1,4 @@
-"""Seeds the two demo users + their demo transactions.
-
-Schema creation is Alembic's job now (alembic/versions/0001_baseline_schema.py)
-- this script only inserts data, and only once (skips if any user already
-  exists), so it's safe to run on every container start.
-"""
+"""Seeds the demo users and transactions; idempotent."""
 from app.db.database import get_connection
 from app.services.auth import register_user
 

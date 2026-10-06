@@ -1,6 +1,4 @@
-"""API-level happy-path tests (LLM/embeddings mocked, no real OpenAI calls) -
-confirms the actual HTTP request/response wiring end to end, not just the
-service layer underneath (see test_tools.py / test_auth.py for that)."""
+"""API-level tests with the LLM and embeddings mocked."""
 import json
 import uuid
 from types import SimpleNamespace

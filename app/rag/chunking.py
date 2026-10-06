@@ -1,12 +1,5 @@
 def chunk_text(text: str, max_chars: int = 800, overlap_chars: int = 150) -> list[str]:
-    """Split text into overlapping chunks for embedding/retrieval.
-
-    Paragraph-aware: consecutive paragraphs are packed together up to
-    max_chars, so related sentences usually stay in one chunk. A paragraph
-    longer than max_chars on its own is hard-split. Each chunk after the
-    first starts with a bit of overlap from the end of the previous one,
-    so context near a chunk boundary isn't lost to retrieval.
-    """
+    """Split text into overlapping, paragraph-aware chunks."""
     paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
     if not paragraphs:
         return []

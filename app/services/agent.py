@@ -34,8 +34,7 @@ SYSTEM_INSTRUCTIONS = (
     "knows why their question couldn't be answered as asked."
 )
 
-# Hard cap on tool-calling rounds per request, so a model that never calls a
-# finish_* tool can't loop forever and run up API cost.
+# Hard cap on tool-calling rounds per request.
 MAX_ITERATIONS = 8
 
 
@@ -87,11 +86,7 @@ def ask_ai(user_message: str, previous_response_id: str | None = None) -> AgentR
                 "no structured output to validate against."
             )
 
-        # Build one function_call_output per call in this round - every call
-        # the model made needs a result before we can submit anything back,
-        # whether that call is a data tool or the finish_* tool. Mixing a
-        # finish_* call into the same round as a data-tool call used to drop
-        # the data tool's output entirely and return early.
+        # Every call in a round needs an output, finish_* calls included.
         finish_answer = None
         tool_outputs = []
 

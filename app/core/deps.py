@@ -11,13 +11,7 @@ def require_user(
 ) -> int:
     """Validate the bearer token and return the user id.
 
-    Deliberately does NOT call set_current_user_id() here: FastAPI runs a
-    sync dependency like this one in its own threadpool dispatch, which
-    copies the contextvars context for that call only. A ContextVar.set()
-    made inside that copy never reaches the (separately dispatched) sync
-    endpoint function - each route must call set_current_user_id(user_id)
-    itself, as the first thing it does, so the set happens in the same
-    context the rest of the request actually runs in.
+    Routes call set_current_user_id() themselves: a ContextVar set in a sync dependency does not reach the route.
     """
     try:
         return decode_access_token(credentials.credentials)

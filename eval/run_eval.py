@@ -1,25 +1,9 @@
-"""Evaluation harness: ~25 questions with ground truth, run against the
-real agent through the real /chat endpoint.
+"""Evaluation harness: ~25 questions run through the real /chat endpoint.
 
-This hits the real OpenAI API (costs tokens, takes a minute or two, and
-LLM phrasing/behavior isn't perfectly deterministic run to run) - it is
-not a substitute for the deterministic pytest suite, it answers a
-different question: "does the live system actually behave correctly end
-to end," not "is this function's math correct."
+Hits the real OpenAI API. Measures tool-calling accuracy, answer correctness
+(exact for math, keyword-based for RAG) and retrieval hit rate.
 
-Measures three things per the project brief:
-  - tool-calling accuracy: did the agent call the expected finish_* tool?
-  - answer correctness: for exact-math questions, is the number right?
-    (checked programmatically, since that's the whole point of keeping
-    calculations out of the LLM) - for free-text RAG answers, correctness
-    is approximated by keyword presence, not an LLM judge, and the report
-    says so explicitly rather than implying a stronger check happened.
-  - retrieval hit rate: for RAG questions, did the cited source match the
-    document that actually contains the answer?
-
-Usage: python eval/run_eval.py
-Requires: dev stack running (docker compose up + seed_documents.py), a
-valid OPENAI_API_KEY in .env, and the two demo users from app/db/init.sql.
+Usage: python eval/run_eval.py (needs the docker stack up and OPENAI_API_KEY).
 """
 from __future__ import annotations
 

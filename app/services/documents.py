@@ -19,12 +19,7 @@ def extract_text(filename: str, content: bytes) -> str:
 
 
 def ingest_document(source: str, text: str) -> int:
-    """Chunk, embed, and store a user-uploaded note for RAG retrieval.
-
-    Stored with the current user's id, so search_financial_knowledge only
-    ever returns it to that same user (plus the shared, user_id-less
-    knowledge base). Returns the number of chunks stored.
-    """
+    """Chunk, embed and store a note for the current user; returns the chunk count."""
     chunks = chunk_text(text)
     user_id = get_current_user_id()
 

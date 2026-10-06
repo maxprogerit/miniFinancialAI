@@ -24,10 +24,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/financialdb
-      # Placeholder, not a real key: only @pytest.mark.live tests make real
-      # OpenAI calls, and this workflow deliberately excludes those (no
-      # OPENAI_API_KEY secret to spend real money on every push). Settings
-      # still requires the field to be set for the app to import at all.
+      # Placeholder; live tests are excluded in CI.
       OPENAI_API_KEY: sk-test-placeholder-not-a-real-key
       JWT_SECRET: test-secret-for-ci-only-not-used-for-anything-real-00000000
 

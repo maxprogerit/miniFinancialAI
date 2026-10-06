@@ -17,10 +17,7 @@ configure_logging()
 
 app = FastAPI(title="AI Financial Assistant")
 
-# Permissive by design: auth here is a Bearer token (Authorization header),
-# never a cookie, so allow_credentials stays False and a wildcard origin is
-# safe - no browser session/cookie can be riding along with these requests.
-# Tighten this to a real origin list before this ever serves non-demo users.
+# Wildcard origin is safe here: auth is a Bearer header, never a cookie.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

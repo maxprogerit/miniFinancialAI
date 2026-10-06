@@ -15,8 +15,7 @@ class Settings(BaseSettings):
     jwt_refresh_token_expire_days: int = 30
     chat_rate_limit_per_minute: int = 20
 
-    # Optional - if either is left unset, UsageInfo.cost_usd stays null
-    # rather than guessing a price for whatever OPENAI_MODEL is configured.
+    # Optional; cost_usd stays null when unset.
     openai_input_price_per_million: float | None = None
     openai_output_price_per_million: float | None = None
 

@@ -1,10 +1,6 @@
 from contextvars import ContextVar
 
-# Set once per request by the require_user auth dependency (app/core/deps.py)
-# after it validates the JWT. Every tool/service function reads "who is
-# asking" through get_current_user_id() instead of taking a user_id
-# parameter, so the LLM tool-calling path (which has no concept of request
-# context) doesn't need to be threaded with one.
+# Per-request identity, set by each route; tools read it instead of taking a user_id.
 _current_user_id: ContextVar[int | None] = ContextVar("current_user_id", default=None)
 
 

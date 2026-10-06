@@ -41,9 +41,7 @@ def authenticate_user(email: str, password: str) -> int:
             cur.execute("SELECT id, password_hash FROM users WHERE email = %s;", (email,))
             row = cur.fetchone()
 
-    # Same error whether the email doesn't exist or the password is wrong -
-    # confirming "that email isn't registered" to a caller is its own
-    # information leak.
+    # Same error for unknown email and wrong password (no enumeration).
     if row is None or not _verify_password(password, row[1]):
         raise ValueError("Invalid email or password.")
 
@@ -72,9 +70,7 @@ def _decode(token: str, expected_type: str, error_message: str) -> int:
     except jwt.PyJWTError as e:
         raise ValueError(error_message) from e
 
-    # A refresh token must never work as an access token and vice versa -
-    # without this check, a long-lived refresh token leaked from storage
-    # could be used directly against every endpoint, not just /auth/refresh.
+    # Keep access and refresh tokens non-interchangeable.
     if payload.get("type") != expected_type:
         raise ValueError(error_message)
 

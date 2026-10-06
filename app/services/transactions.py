@@ -56,11 +56,7 @@ def list_current_user_transactions(
     limit: int | None = None,
     offset: int = 0,
 ) -> tuple[list[dict], int]:
-    """Returns (rows, total_matching_count). total ignores limit/offset, so
-    callers that paginate (the REST endpoint) can report how many pages
-    there are; callers that don't (the LLM tool) just get everything back
-    when limit is left as None.
-    """
+    """Returns (rows, total matching count); limit=None returns everything."""
     if category is not None:
         category = resolve_category(category)
 
@@ -200,12 +196,7 @@ def import_current_user_transactions(rows: list[dict]) -> None:
 
 
 def import_transactions_csv(csv_text: str) -> dict:
-    """Parse + validate a CSV of transactions and insert the valid rows.
-
-    Expected columns: merchant, amount, currency, category, transaction_date
-    (YYYY-MM-DD). Invalid rows are skipped and reported, not just rejected
-    wholesale - one bad row shouldn't block the rest of the file.
-    """
+    """Validate a transactions CSV and insert the valid rows; bad rows are skipped and reported."""
     reader = csv.DictReader(io.StringIO(csv_text))
 
     valid_rows: list[dict] = []

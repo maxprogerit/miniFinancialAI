@@ -42,8 +42,7 @@ def upgrade() -> None:
     op.create_table(
         "documents",
         sa.Column("id", sa.Integer, primary_key=True),
-        # Nullable: NULL = shared app knowledge, visible to every user; a
-        # real id = that user's own uploaded note (see app/rag/retrieval.py).
+        # NULL user_id = shared knowledge.
         sa.Column("user_id", sa.Integer, sa.ForeignKey("users.id"), nullable=True),
         sa.Column("source", sa.Text, nullable=False),
         sa.Column("chunk_index", sa.Integer, nullable=False, server_default="0"),

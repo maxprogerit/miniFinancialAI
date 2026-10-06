@@ -4,10 +4,7 @@ import sys
 
 
 class JsonFormatter(logging.Formatter):
-    """Emits one JSON object per line - never includes the raw message text
-    the user sent or any tool output, only operational metadata (status
-    codes, durations, token counts, tool names, user ids).
-    """
+    """One JSON object per line; operational metadata only, no message content."""
 
     def format(self, record: logging.LogRecord) -> str:
         payload = {

@@ -11,10 +11,6 @@
     txnCategory: "",
   };
 
-  // ---------------------------------------------------------------------
-  // API helper
-  // ---------------------------------------------------------------------
-
   function storeTokens(accessToken, refreshToken) {
     state.token = accessToken;
     state.refreshToken = refreshToken;
@@ -22,9 +18,7 @@
     localStorage.setItem("refreshToken", refreshToken);
   }
 
-  // Access tokens are short-lived (60 min by default) so a demo session
-  // shouldn't die mid-conversation - on a 401, try the refresh token once
-  // before giving up and surfacing an error.
+  // On a 401, try the refresh token once before surfacing the error.
   async function tryRefreshToken() {
     if (!state.refreshToken) return false;
     try {
@@ -84,10 +78,6 @@
     const n = Number(amount);
     return `${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
   }
-
-  // ---------------------------------------------------------------------
-  // Auth
-  // ---------------------------------------------------------------------
 
   const authScreen = document.getElementById("auth-screen");
   const appScreen = document.getElementById("app-screen");
@@ -162,10 +152,6 @@
     loadTransactions();
   }
 
-  // ---------------------------------------------------------------------
-  // Tabs
-  // ---------------------------------------------------------------------
-
   document.querySelectorAll(".nav-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".nav-btn").forEach((b) => b.classList.remove("active"));
@@ -174,10 +160,6 @@
       document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
     });
   });
-
-  // ---------------------------------------------------------------------
-  // Chat
-  // ---------------------------------------------------------------------
 
   const chatMessages = document.getElementById("chat-messages");
   const chatForm = document.getElementById("chat-form");
@@ -317,10 +299,6 @@
     }
   });
 
-  // ---------------------------------------------------------------------
-  // Transactions
-  // ---------------------------------------------------------------------
-
   const txnBody = document.getElementById("transactions-body");
   const pageInfo = document.getElementById("page-info");
   const categoryFilter = document.getElementById("category-filter");
@@ -394,10 +372,6 @@
     e.target.value = "";
   });
 
-  // ---------------------------------------------------------------------
-  // Documents
-  // ---------------------------------------------------------------------
-
   const docResult = document.getElementById("doc-result");
   const docInput = document.getElementById("doc-input");
   const dropzone = document.getElementById("doc-dropzone");
@@ -437,10 +411,6 @@
     uploadDocument(file);
   });
 
-  // ---------------------------------------------------------------------
-  // Theme
-  // ---------------------------------------------------------------------
-
   const themeToggleBtn = document.getElementById("theme-toggle-btn");
 
   function currentTheme() {
@@ -466,10 +436,6 @@
 
   const savedTheme = localStorage.getItem("theme");
   applyTheme(savedTheme || currentTheme());
-
-  // ---------------------------------------------------------------------
-  // Boot
-  // ---------------------------------------------------------------------
 
   if (state.token) {
     enterApp();

@@ -1,12 +1,4 @@
-"""Deterministic math/business-logic tests for the service layer - the
-exact calculations the project's core principle says must come from
-SQL/Python, never guessed by the LLM.
-
-Requires the dev stack running, seeded via app/db/init.sql (ground truth:
-user 1 = 3480 EUR total, 2420 EUR/4 transactions in electronics; user 2 =
-3000 EUR total, a single electronics transaction). Reads real data via the
-real DB - faking exact-number correctness would defeat the point.
-"""
+"""Deterministic service-layer tests against the seeded demo data."""
 import pytest
 
 from app.core.current_user import set_current_user_id
@@ -88,8 +80,7 @@ def test_list_current_user_transactions_pagination():
     assert len(page1) == 5
     assert len(page2) == 5
     assert total1 == total2 == 11
-    # Merchant names can repeat (two Amazon rows, two Supermarket rows), so
-    # identity is checked via date+amount+merchant together, not name alone.
+    # Merchants repeat, so match on date+amount+merchant.
     page1_keys = {(t["date"], t["amount"], t["merchant"]) for t in page1}
     page2_keys = {(t["date"], t["amount"], t["merchant"]) for t in page2}
     assert page1_keys.isdisjoint(page2_keys)
