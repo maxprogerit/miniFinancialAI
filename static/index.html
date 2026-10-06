@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Financial Assistant</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<div id="auth-screen" class="screen">
+  <div class="auth-card">
+    <div class="brand-mark">
+      <span class="brand-icon">◆</span>
+      <span class="brand-name">AI Financial Assistant</span>
+    </div>
+    <p class="subtitle">Ask questions about your finances. Answers come from real tool calls and RAG search &mdash; never from the model guessing numbers.</p>
+
+    <form id="auth-form">
+      <label>Email
+        <input type="email" id="auth-email" required value="demo1@example.com" autocomplete="username">
+      </label>
+      <label>Password
+        <input type="password" id="auth-password" required value="DemoPass123!" autocomplete="current-password">
+      </label>
+      <button type="submit" id="auth-submit" class="btn btn-primary btn-block">Log in</button>
+    </form>
+
+    <div class="auth-toggle">
+      <span id="auth-mode-text">New here?</span>
+      <button id="auth-toggle-btn" type="button" class="link-btn">Create an account instead</button>
+    </div>
+
+    <div id="auth-error" class="banner banner-error hidden"></div>
+
+    <div class="demo-hint">
+      Demo accounts: <code>demo1@example.com</code> / <code>demo2@example.com</code>, password <code>DemoPass123!</code>
+    </div>
+  </div>
+</div>
+
+<div id="app-screen" class="screen hidden">
+  <aside class="sidebar">
+    <div class="brand-mark">
+      <span class="brand-icon">◆</span>
+      <span class="brand-name">Financial AI</span>
+    </div>
+
+    <nav class="nav">
+      <button class="nav-btn active" data-tab="chat"><span class="nav-icon">&#9998;</span> Chat</button>
+      <button class="nav-btn" data-tab="transactions"><span class="nav-icon">&#8801;</span> Transactions</button>
+      <button class="nav-btn" data-tab="documents"><span class="nav-icon">&#9664;</span> Documents</button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <span class="user-dot"></span>
+        <span id="user-email"></span>
+      </div>
+      <button id="logout-btn" class="btn btn-ghost btn-block">Log out</button>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <section id="tab-chat" class="tab-panel active">
+      <div id="chat-messages" class="chat-messages"></div>
+      <form id="chat-form" class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="e.g. How much did I spend on electronics?" autocomplete="off">
+        <button type="submit" class="btn btn-primary">Send</button>
+      </form>
+    </section>
+
+    <section id="tab-transactions" class="tab-panel">
+      <div class="panel-header">
+        <h2>Transactions</h2>
+        <div class="toolbar">
+          <input type="text" id="category-filter" placeholder="Filter by category&hellip;">
+          <label class="btn btn-secondary file-btn">
+            Import CSV
+            <input type="file" id="csv-input" accept=".csv" hidden>
+          </label>
+        </div>
+      </div>
+      <div id="import-result" class="banner hidden"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Merchant</th><th>Category</th><th class="num">Amount</th></tr></thead>
+          <tbody id="transactions-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <button id="prev-page" class="btn btn-secondary">&larr; Prev</button>
+        <span id="page-info"></span>
+        <button id="next-page" class="btn btn-secondary">Next &rarr;</button>
+      </div>
+    </section>
+
+    <section id="tab-documents" class="tab-panel">
+      <h2>Upload a note</h2>
+      <p class="hint">Upload a <code>.txt</code> or <code>.pdf</code> note. It will be chunked, embedded, and cited by source whenever the assistant uses it to answer a question in Chat.</p>
+      <label class="dropzone" id="doc-dropzone">
+        <input type="file" id="doc-input" accept=".txt,.pdf" hidden>
+        <span class="dropzone-icon">&#8679;</span>
+        <span>Click or drop a .txt / .pdf file here</span>
+      </label>
+      <div id="doc-result" class="banner hidden"></div>
+    </section>
+
+  </main>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

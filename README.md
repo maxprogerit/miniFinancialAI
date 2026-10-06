@@ -70,7 +70,7 @@ what makes the response structured rather than free text.
 | CORS, `GET /health` with a real DB check + container healthcheck | Done |
 | **Cost ($) per request** | **Not implemented** - token counts are logged; a $ figure would need pricing data this project can't currently verify as current |
 | CI pipeline (GitHub Actions) | Done - runs migrations + the non-live test suite against a real Postgres service container on every push/PR |
-| **Frontend** | **Not implemented** - this is an API-only backend |
+| Frontend | Done - plain HTML/CSS/JS served by FastAPI itself at `/`, no build step |
 | Swagger screenshots | **Not included** - no browser-automation tool was available while writing this; the live docs at `/docs` are the real artifact |
 
 ## Quick start (5 minutes)
@@ -95,11 +95,29 @@ That's it - on first boot the API container runs `alembic upgrade head`
 transactions) and `seed_documents.py` (the shared RAG knowledge base) -
 all three are idempotent, safe to re-run on every container restart.
 
-Interactive docs: http://localhost:8000/docs
+Web UI: http://localhost:8000/ &middot; Interactive API docs: http://localhost:8000/docs
 
 Demo accounts (seeded by `seed_demo_data.py`): `demo1@example.com` / `demo2@example.com`,
-password `DemoPass123!` for both. `demo1` has a full transaction history;
-`demo2` exists only to prove data isolation (a single transaction).
+password `DemoPass123!` for both (pre-filled in the login form). `demo1` has
+a full transaction history; `demo2` exists only to prove data isolation (a
+single transaction).
+
+## Frontend
+
+A plain HTML/CSS/JS page at `/` (`static/index.html` + `app.js` +
+`styles.css`, served by FastAPI's own `StaticFiles` - no separate build
+step, no framework). It's a thin client over the same REST API described
+below, not a second source of logic:
+
+- **Chat** - ask a question, see the structured answer rendered by shape
+  (spending summary, transaction table, category tags, a percentage bar
+  for comparisons, or a cited knowledge answer), plus which tools the
+  agent called and the token cost, right under the message.
+- **Transactions** - paginated table, category filter, CSV import.
+- **Documents** - drag-and-drop (or click) upload of a `.txt`/`.pdf` note.
+
+The JWT lives in `localStorage` - consistent with the API using Bearer
+auth rather than cookies (see the CORS note below).
 
 ## Demo flow
 
