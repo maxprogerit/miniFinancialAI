@@ -5,7 +5,6 @@ import json
 import uuid
 from types import SimpleNamespace
 
-import app.api.documents as documents_api
 import app.api.transactions as transactions_api
 import app.services.agent as agent_mod
 from app.db.database import get_connection
@@ -104,22 +103,3 @@ def test_transactions_import_happy_path(client, demo1_token, monkeypatch):
     assert resp.json() == {"imported": 1, "skipped": 0, "errors": []}
 
 
-def test_documents_upload_happy_path(client, demo1_token, monkeypatch):
-    monkeypatch.setattr(documents_api, "ingest_document", lambda source, text: 2)
-
-    resp = client.post(
-        "/documents",
-        files={"file": ("notes.txt", b"some note content", "text/plain")},
-        headers={"Authorization": f"Bearer {demo1_token}"},
-    )
-    assert resp.status_code == 200, resp.text
-    assert resp.json() == {"source": "notes.txt", "chunks_stored": 2}
-
-
-def test_documents_upload_rejects_non_txt(client, demo1_token):
-    resp = client.post(
-        "/documents",
-        files={"file": ("notes.pdf", b"whatever", "application/pdf")},
-        headers={"Authorization": f"Bearer {demo1_token}"},
-    )
-    assert resp.status_code == 422

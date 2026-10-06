@@ -1,9 +1,21 @@
+import io
+
 from pgvector import Vector
 from pgvector.psycopg import register_vector
+from pypdf import PdfReader
 
 from app.core.current_user import get_current_user_id
 from app.db.database import get_connection
 from app.rag import chunk_text, embed_text
+
+SUPPORTED_EXTENSIONS = (".txt", ".pdf")
+
+
+def extract_text(filename: str, content: bytes) -> str:
+    if filename.lower().endswith(".pdf"):
+        reader = PdfReader(io.BytesIO(content))
+        return "\n\n".join(page.extract_text() or "" for page in reader.pages)
+    return content.decode("utf-8")
 
 
 def ingest_document(source: str, text: str) -> int:

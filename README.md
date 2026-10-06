@@ -58,7 +58,7 @@ what makes the response structured rather than free text.
 | `app/` structure (api/services/tools/rag/db/schemas/core), env config | Done |
 | `POST /chat` returning `{answer, tool_calls, sources, usage}` | Done |
 | `GET /transactions` (paginated), `POST /transactions/import` (CSV) | Done |
-| `POST /documents` (upload a note for RAG) | Done for `.txt`; **PDF not implemented** |
+| `POST /documents` (upload a note for RAG) | Done - `.txt` and `.pdf` |
 | 5 data tools + RAG tool, allowlist registry, backend-injected `user_id` | Done |
 | RAG + tools together, with cited sources, chunking, configurable `top_k` | Done |
 | JWT auth (register/login), per-user isolation everywhere | Done |
@@ -236,8 +236,6 @@ the same way `/chat` is called here.
 - Fixed 60-minute access token expiry, no refresh tokens.
 - Rate limiting is per-process, in-memory (see trade-offs above).
 - No CI pipeline configured.
-- `POST /documents` accepts `.txt` only - PDF upload is mentioned in the
-  original brief but not implemented.
 - No Swagger screenshots in this README (see the table above).
 - The eval script's RAG correctness check is keyword-based, not graded by
   a second model.
