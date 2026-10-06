@@ -106,6 +106,11 @@ class DocumentUploadResult(BaseModel):
     chunks_stored: int = Field(description="Number of chunks the document was split into")
 
 
+class HealthStatus(BaseModel):
+    status: str = Field(description="'ok' or 'degraded'")
+    database: str = Field(description="'ok' or 'unreachable'")
+
+
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
