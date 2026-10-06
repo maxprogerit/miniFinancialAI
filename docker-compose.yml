@@ -10,10 +10,6 @@ services:
       - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Postgres only runs files here on a brand-new (empty) data directory -
-      # this is what actually creates the schema + demo users/transactions
-      # on a clean `docker compose up`, not something run by the app.
-      - ./app/db/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
