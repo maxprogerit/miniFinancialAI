@@ -5,3 +5,4 @@ __pycache__/
 .claude/
 .pytest_cache/
 eval/results.md
+memory.txt
