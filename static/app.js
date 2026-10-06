@@ -3,6 +3,7 @@
 
   const state = {
     token: localStorage.getItem("token") || null,
+    refreshToken: localStorage.getItem("refreshToken") || null,
     email: localStorage.getItem("email") || null,
     authMode: "login", // "login" | "register"
     txnOffset: 0,
@@ -14,16 +15,54 @@
   // API helper
   // ---------------------------------------------------------------------
 
-  async function apiFetch(path, options = {}) {
-    const headers = options.headers || {};
-    if (state.token) headers["Authorization"] = "Bearer " + state.token;
+  function storeTokens(accessToken, refreshToken) {
+    state.token = accessToken;
+    state.refreshToken = refreshToken;
+    localStorage.setItem("token", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+  }
 
+  // Access tokens are short-lived (60 min by default) so a demo session
+  // shouldn't die mid-conversation - on a 401, try the refresh token once
+  // before giving up and surfacing an error.
+  async function tryRefreshToken() {
+    if (!state.refreshToken) return false;
+    try {
+      const resp = await fetch("/auth/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: state.refreshToken }),
+      });
+      if (!resp.ok) return false;
+      const data = await resp.json();
+      storeTokens(data.access_token, data.refresh_token);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function rawFetch(path, options) {
+    const headers = { ...(options.headers || {}) };
+    if (state.token) headers["Authorization"] = "Bearer " + state.token;
     const resp = await fetch(path, { ...options, headers });
     let body = null;
     try {
       body = await resp.json();
     } catch {
       /* no JSON body (e.g. 204) */
+    }
+    return { resp, body };
+  }
+
+  async function apiFetch(path, options = {}, _isRetry = false) {
+    let { resp, body } = await rawFetch(path, options);
+
+    if (resp.status === 401 && !_isRetry && path !== "/auth/refresh") {
+      if (await tryRefreshToken()) {
+        return apiFetch(path, options, true);
+      }
+      logout();
     }
 
     if (!resp.ok) {
@@ -91,9 +130,8 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      state.token = result.access_token;
+      storeTokens(result.access_token, result.refresh_token);
       state.email = email;
-      localStorage.setItem("token", state.token);
       localStorage.setItem("email", state.email);
       enterApp();
     } catch (err) {
@@ -104,14 +142,18 @@
     }
   });
 
-  document.getElementById("logout-btn").addEventListener("click", () => {
+  function logout() {
     state.token = null;
+    state.refreshToken = null;
     localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
     localStorage.removeItem("email");
-    document.getElementById("chat-messages").innerHTML = "";
+    resetChat();
     appScreen.classList.add("hidden");
     authScreen.classList.remove("hidden");
-  });
+  }
+
+  document.getElementById("logout-btn").addEventListener("click", logout);
 
   function enterApp() {
     document.getElementById("user-email").textContent = state.email || "";
@@ -140,11 +182,22 @@
   const chatMessages = document.getElementById("chat-messages");
   const chatForm = document.getElementById("chat-form");
   const chatInput = document.getElementById("chat-input");
+  const chatEmptyStateHtml = document.getElementById("chat-empty-state").outerHTML;
+
+  function clearEmptyState() {
+    const emptyState = document.getElementById("chat-empty-state");
+    if (emptyState) emptyState.remove();
+  }
+
+  function resetChat() {
+    chatMessages.innerHTML = chatEmptyStateHtml;
+  }
 
   function addUserBubble(text) {
+    clearEmptyState();
     const row = document.createElement("div");
     row.className = "msg-row user";
-    row.innerHTML = `<div class="bubble">${escapeHtml(text)}</div>`;
+    row.innerHTML = `<div class="bubble">${escapeHtml(text)}</div><div class="avatar avatar-user">${escapeHtml((state.email || "?")[0].toUpperCase())}</div>`;
     chatMessages.appendChild(row);
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
@@ -152,7 +205,7 @@
   function addThinkingBubble() {
     const row = document.createElement("div");
     row.className = "msg-row assistant";
-    row.innerHTML = `<div class="bubble thinking">Thinking <span class="typing-dots"><span></span><span></span><span></span></span></div>`;
+    row.innerHTML = `<div class="avatar avatar-assistant">&#9670;</div><div class="bubble thinking">Thinking <span class="typing-dots"><span></span><span></span><span></span></span></div>`;
     chatMessages.appendChild(row);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     return row;
@@ -224,6 +277,7 @@
     }
 
     row.innerHTML = `
+      <div class="avatar avatar-assistant">&#9670;</div>
       <div class="${bubbleClass}">
         ${renderAnswerBody(body.answer)}
         ${meta ? `<div class="answer-meta">${meta}</div>` : ""}
@@ -232,8 +286,15 @@
   }
 
   function replaceWithError(row, message) {
-    row.innerHTML = `<div class="bubble error">${escapeHtml(message)}</div>`;
+    row.innerHTML = `<div class="avatar avatar-assistant">&#9670;</div><div class="bubble error">${escapeHtml(message)}</div>`;
   }
+
+  chatMessages.addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    chatInput.value = chip.dataset.question;
+    chatForm.requestSubmit();
+  });
 
   chatForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -375,6 +436,36 @@
     const file = e.dataTransfer.files[0];
     uploadDocument(file);
   });
+
+  // ---------------------------------------------------------------------
+  // Theme
+  // ---------------------------------------------------------------------
+
+  const themeToggleBtn = document.getElementById("theme-toggle-btn");
+
+  function currentTheme() {
+    return (
+      document.documentElement.getAttribute("data-theme") ||
+      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+    );
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    themeToggleBtn.innerHTML =
+      theme === "dark"
+        ? '<span class="nav-icon">&#9680;</span> Light mode'
+        : '<span class="nav-icon">&#9680;</span> Dark mode';
+  }
+
+  themeToggleBtn.addEventListener("click", () => {
+    const next = currentTheme() === "dark" ? "light" : "dark";
+    localStorage.setItem("theme", next);
+    applyTheme(next);
+  });
+
+  const savedTheme = localStorage.getItem("theme");
+  applyTheme(savedTheme || currentTheme());
 
   // ---------------------------------------------------------------------
   // Boot

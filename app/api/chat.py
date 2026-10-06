@@ -76,5 +76,6 @@ def chat(request: ChatRequest, user_id: int = Depends(require_user)) -> ChatResp
             input_tokens=result.input_tokens,
             output_tokens=result.output_tokens,
             total_tokens=result.total_tokens,
+            cost_usd=result.cost_usd,
         ),
     )

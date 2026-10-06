@@ -62,13 +62,14 @@ what makes the response structured rather than free text.
 | 5 data tools + RAG tool, allowlist registry, backend-injected `user_id` | Done |
 | RAG + tools together, with cited sources, chunking, configurable `top_k` | Done |
 | JWT auth (register/login), per-user isolation everywhere | Done |
+| Refresh tokens (`/auth/refresh`) | Done - stateless JWT, see design decisions below for the trade-off |
 | Prompt-injection & cross-user tests, rate limiting on `/chat` | Done |
 | Timeouts + retries for the LLM API, structured logging, token logging | Done (retry-with-backoff is the OpenAI SDK's built-in `max_retries`, not custom code) |
-| pytest suite + evaluation script | Done - 35 tests, 25-question eval at 100% on all three metrics |
+| pytest suite + evaluation script | Done - 45 tests, 25-question eval at 100% on all three metrics |
 | Docker: one-command run from a clean clone | Done |
 | Alembic migrations | Done - hand-written (no ORM models), see design decisions below |
 | CORS, `GET /health` with a real DB check + container healthcheck | Done |
-| **Cost ($) per request** | **Not implemented** - token counts are logged; a $ figure would need pricing data this project can't currently verify as current |
+| Cost ($) per request | Done, opt-in - `cost_usd` on `/chat`'s `usage` is only populated if you set `OPENAI_INPUT_PRICE_PER_MILLION` / `OPENAI_OUTPUT_PRICE_PER_MILLION` yourself; left unset it stays `null` rather than guessing a price for whatever `OPENAI_MODEL` is configured |
 | CI pipeline (GitHub Actions) | Done - runs migrations + the non-live test suite against a real Postgres service container on every push/PR |
 | Frontend | Done - plain HTML/CSS/JS served by FastAPI itself at `/`, no build step |
 | Swagger screenshots | **Not included** - no browser-automation tool was available while writing this; the live docs at `/docs` are the real artifact |
@@ -109,15 +110,33 @@ A plain HTML/CSS/JS page at `/` (`static/index.html` + `app.js` +
 step, no framework). It's a thin client over the same REST API described
 below, not a second source of logic:
 
-- **Chat** - ask a question, see the structured answer rendered by shape
-  (spending summary, transaction table, category tags, a percentage bar
-  for comparisons, or a cited knowledge answer), plus which tools the
-  agent called and the token cost, right under the message.
+- **Chat** - ask a question (or tap one of the example chips on the empty
+  state), see the structured answer rendered by shape (spending summary,
+  transaction table, category tags, a percentage bar for comparisons, or a
+  cited knowledge answer), plus which tools the agent called and the token
+  cost, right under the message.
 - **Transactions** - paginated table, category filter, CSV import.
 - **Documents** - drag-and-drop (or click) upload of a `.txt`/`.pdf` note.
+- Light/dark theme toggle (follows the OS preference by default, overridable
+  per-browser via `localStorage`).
 
-The JWT lives in `localStorage` - consistent with the API using Bearer
-auth rather than cookies (see the CORS note below).
+Both the access and refresh token live in `localStorage` - consistent with
+the API using Bearer auth rather than cookies (see the CORS note below). If
+an API call gets a 401, the client transparently exchanges the refresh token
+for a new access token via `/auth/refresh` and retries once before giving up
+and logging out.
+
+## Screenshots
+
+<!-- Captured from a running `docker compose up` stack at http://localhost:8000/ -->
+
+| Login | Chat |
+|---|---|
+| ![Login screen](docs/screenshots/login.png) | ![Chat with a spending summary answer](docs/screenshots/chat.png) |
+
+| Transactions | Documents |
+|---|---|
+| ![Transactions table with filter and pagination](docs/screenshots/transactions.png) | ![Document upload](docs/screenshots/documents.png) |
 
 ## Demo flow
 
@@ -161,7 +180,7 @@ Example `/chat` response shape:
   "answer": {"total": 2420.0, "currency": "EUR", "category": "electronics", "transaction_count": 4},
   "tool_calls": ["calculate_category_spending", "finish_with_spending_summary"],
   "sources": [],
-  "usage": {"input_tokens": 2375, "output_tokens": 88, "total_tokens": 2463}
+  "usage": {"input_tokens": 2375, "output_tokens": 88, "total_tokens": 2463, "cost_usd": null}
 }
 ```
 
@@ -170,7 +189,7 @@ Example `/chat` response shape:
 ```bash
 pip install -r requirements.txt
 
-pytest -m "not live"   # 38 tests, fully local/mocked LLM, fast
+pytest -m "not live"   # 43 tests, fully local/mocked LLM, fast
 pytest -m live         # 2 tests that hit the real OpenAI API
 pytest                 # everything
 
@@ -217,6 +236,14 @@ here once this is pushed to a real GitHub repo
   vector similarity. Simple, but would need a more deliberate
   ranking/weighting strategy if the personal-notes corpus grew large
   relative to the shared knowledge base.
+- **Refresh tokens are a stateless JWT (`type: "refresh"`, 30-day expiry by
+  default), not backed by a database table.** `/auth/refresh` checks the
+  token's signature, expiry, and `type` claim (so an access token can never
+  be used as a refresh token or vice versa), then issues a new access token.
+  There's no revocation list, so a leaked refresh token stays valid until it
+  naturally expires - a real production system would back this with a
+  server-side store (even just a table of issued token ids) so a refresh
+  token could be revoked on logout or a detected compromise.
 - **Answer correctness in the eval script is exact for math questions**
   (the whole point of keeping calculations server-side) **but keyword
   presence for free-text RAG answers**, not an LLM-as-judge. Said so
@@ -256,7 +283,7 @@ the same way `/chat` is called here.
 
 ## Known limitations
 
-- Fixed 60-minute access token expiry, no refresh tokens.
+- Refresh tokens can't be revoked server-side (see design decisions above).
 - Rate limiting is per-process, in-memory (see trade-offs above).
 - CI runs the non-live suite only - the 2 `@pytest.mark.live` tests that
   hit the real OpenAI API need a real `OPENAI_API_KEY`, which isn't

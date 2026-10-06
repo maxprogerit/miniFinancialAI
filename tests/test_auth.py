@@ -15,7 +15,9 @@ from app.services.auth import (
     JWT_ALGORITHM,
     authenticate_user,
     create_access_token,
+    create_refresh_token,
     decode_access_token,
+    decode_refresh_token,
     register_user,
 )
 
@@ -69,3 +71,24 @@ def test_tampered_token_rejected():
     token = create_access_token(1)
     with pytest.raises(ValueError):
         decode_access_token(token + "x")
+
+
+def test_refresh_token_roundtrip():
+    token = create_refresh_token(123)
+    assert decode_refresh_token(token) == 123
+
+
+def test_access_token_rejected_as_refresh_token():
+    # A leaked access token must not double as a refresh token - it carries
+    # type=access, so decode_refresh_token must reject it outright.
+    token = create_access_token(1)
+    with pytest.raises(ValueError, match="Invalid or expired refresh token"):
+        decode_refresh_token(token)
+
+
+def test_refresh_token_rejected_as_access_token():
+    # And the reverse: a refresh token must not work directly against
+    # endpoints that expect an access token.
+    token = create_refresh_token(1)
+    with pytest.raises(ValueError, match="Invalid or expired token"):
+        decode_access_token(token)

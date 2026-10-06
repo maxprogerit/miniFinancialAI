@@ -54,14 +54,36 @@ def create_access_token(user_id: int) -> str:
     expires_at = datetime.now(timezone.utc) + timedelta(
         minutes=settings.jwt_access_token_expire_minutes
     )
-    payload = {"sub": str(user_id), "exp": expires_at}
+    payload = {"sub": str(user_id), "type": "access", "exp": expires_at}
     return jwt.encode(payload, settings.jwt_secret, algorithm=JWT_ALGORITHM)
 
 
-def decode_access_token(token: str) -> int:
+def create_refresh_token(user_id: int) -> str:
+    expires_at = datetime.now(timezone.utc) + timedelta(
+        days=settings.jwt_refresh_token_expire_days
+    )
+    payload = {"sub": str(user_id), "type": "refresh", "exp": expires_at}
+    return jwt.encode(payload, settings.jwt_secret, algorithm=JWT_ALGORITHM)
+
+
+def _decode(token: str, expected_type: str, error_message: str) -> int:
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[JWT_ALGORITHM])
     except jwt.PyJWTError as e:
-        raise ValueError("Invalid or expired token.") from e
+        raise ValueError(error_message) from e
+
+    # A refresh token must never work as an access token and vice versa -
+    # without this check, a long-lived refresh token leaked from storage
+    # could be used directly against every endpoint, not just /auth/refresh.
+    if payload.get("type") != expected_type:
+        raise ValueError(error_message)
 
     return int(payload["sub"])
+
+
+def decode_access_token(token: str) -> int:
+    return _decode(token, "access", "Invalid or expired token.")
+
+
+def decode_refresh_token(token: str) -> int:
+    return _decode(token, "refresh", "Invalid or expired refresh token.")

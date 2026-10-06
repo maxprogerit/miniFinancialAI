@@ -69,6 +69,13 @@ class UsageInfo(BaseModel):
     input_tokens: int
     output_tokens: int
     total_tokens: int
+    cost_usd: float | None = Field(
+        default=None,
+        description=(
+            "Estimated cost in USD, or null if OPENAI_INPUT_PRICE_PER_MILLION / "
+            "OPENAI_OUTPUT_PRICE_PER_MILLION aren't configured."
+        ),
+    )
 
 
 AnswerPayload = (
@@ -133,4 +140,9 @@ class LoginRequest(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str

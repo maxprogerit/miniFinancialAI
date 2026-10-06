@@ -4,37 +4,52 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Financial Assistant</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234f46e5'/%3E%3Ctext x='50' y='70' font-size='58' text-anchor='middle' fill='white' font-family='Arial, sans-serif'%3E%E2%97%86%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
 
 <div id="auth-screen" class="screen">
-  <div class="auth-card">
-    <div class="brand-mark">
-      <span class="brand-icon">◆</span>
-      <span class="brand-name">AI Financial Assistant</span>
-    </div>
-    <p class="subtitle">Ask questions about your finances. Answers come from real tool calls and RAG search &mdash; never from the model guessing numbers.</p>
-
-    <form id="auth-form">
-      <label>Email
-        <input type="email" id="auth-email" required value="demo1@example.com" autocomplete="username">
-      </label>
-      <label>Password
-        <input type="password" id="auth-password" required value="DemoPass123!" autocomplete="current-password">
-      </label>
-      <button type="submit" id="auth-submit" class="btn btn-primary btn-block">Log in</button>
-    </form>
-
-    <div class="auth-toggle">
-      <span id="auth-mode-text">New here?</span>
-      <button id="auth-toggle-btn" type="button" class="link-btn">Create an account instead</button>
+  <div class="auth-layout">
+    <div class="auth-hero">
+      <div class="brand-mark">
+        <span class="brand-icon">◆</span>
+        <span class="brand-name">AI Financial Assistant</span>
+      </div>
+      <h1>Ask your finances a question.<br>Get a real answer.</h1>
+      <ul class="hero-features">
+        <li><span class="hero-feature-icon">&#8730;</span> Every number comes from a real SQL query &mdash; the model never guesses</li>
+        <li><span class="hero-feature-icon">&#8730;</span> Personal notes retrieved with RAG are cited by source</li>
+        <li><span class="hero-feature-icon">&#8730;</span> Full per-user data isolation, enforced server-side</li>
+      </ul>
     </div>
 
-    <div id="auth-error" class="banner banner-error hidden"></div>
+    <div class="auth-card">
+      <div class="brand-mark auth-card-brand">
+        <span class="brand-icon">◆</span>
+        <span class="brand-name">AI Financial Assistant</span>
+      </div>
 
-    <div class="demo-hint">
-      Demo accounts: <code>demo1@example.com</code> / <code>demo2@example.com</code>, password <code>DemoPass123!</code>
+      <form id="auth-form">
+        <label>Email
+          <input type="email" id="auth-email" required value="demo1@example.com" autocomplete="username">
+        </label>
+        <label>Password
+          <input type="password" id="auth-password" required value="DemoPass123!" autocomplete="current-password">
+        </label>
+        <button type="submit" id="auth-submit" class="btn btn-primary btn-block">Log in</button>
+      </form>
+
+      <div class="auth-toggle">
+        <span id="auth-mode-text">New here?</span>
+        <button id="auth-toggle-btn" type="button" class="link-btn">Create an account instead</button>
+      </div>
+
+      <div id="auth-error" class="banner banner-error hidden"></div>
+
+      <div class="demo-hint">
+        Demo accounts: <code>demo1@example.com</code> / <code>demo2@example.com</code>, password <code>DemoPass123!</code>
+      </div>
     </div>
   </div>
 </div>
@@ -57,6 +72,7 @@
         <span class="user-dot"></span>
         <span id="user-email"></span>
       </div>
+      <button id="theme-toggle-btn" class="btn btn-ghost btn-block" type="button"><span class="nav-icon">&#9680;</span> Dark mode</button>
       <button id="logout-btn" class="btn btn-ghost btn-block">Log out</button>
     </div>
   </aside>
@@ -64,7 +80,18 @@
   <main class="content">
 
     <section id="tab-chat" class="tab-panel active">
-      <div id="chat-messages" class="chat-messages"></div>
+      <div id="chat-messages" class="chat-messages">
+        <div id="chat-empty-state" class="chat-empty">
+          <div class="chat-empty-icon">◆</div>
+          <h3>Ask about your finances</h3>
+          <p>Answers are backed by real tool calls over your data, or by cited notes &mdash; try one:</p>
+          <div class="example-chips">
+            <button type="button" class="chip" data-question="How much did I spend on electronics?">How much did I spend on electronics?</button>
+            <button type="button" class="chip" data-question="What percentage of my spending is on electronics?">What percentage of my spending is on electronics?</button>
+            <button type="button" class="chip" data-question="What is an emergency fund?">What is an emergency fund?</button>
+          </div>
+        </div>
+      </div>
       <form id="chat-form" class="chat-input-row">
         <input type="text" id="chat-input" placeholder="e.g. How much did I spend on electronics?" autocomplete="off">
         <button type="submit" class="btn btn-primary">Send</button>

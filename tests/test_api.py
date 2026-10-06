@@ -39,6 +39,37 @@ def test_register_then_login(client):
             cur.execute("DELETE FROM users WHERE email = %s;", (email,))
 
 
+def test_refresh_issues_a_new_access_token(client):
+    email = f"api-test-{uuid.uuid4().hex[:8]}@example.com"
+    register_resp = client.post("/auth/register", json={"email": email, "password": "SomePassword123!"})
+    refresh_token = register_resp.json()["refresh_token"]
+
+    resp = client.post("/auth/refresh", json={"refresh_token": refresh_token})
+    assert resp.status_code == 200, resp.text
+    new_access_token = resp.json()["access_token"]
+
+    # The new access token actually works against a protected endpoint.
+    resp = client.get("/transactions", headers={"Authorization": f"Bearer {new_access_token}"})
+    assert resp.status_code == 200, resp.text
+
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM users WHERE email = %s;", (email,))
+
+
+def test_refresh_rejects_an_access_token(client):
+    email = f"api-test-{uuid.uuid4().hex[:8]}@example.com"
+    register_resp = client.post("/auth/register", json={"email": email, "password": "SomePassword123!"})
+    access_token = register_resp.json()["access_token"]
+
+    resp = client.post("/auth/refresh", json={"refresh_token": access_token})
+    assert resp.status_code == 401, resp.text
+
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM users WHERE email = %s;", (email,))
+
+
 def test_register_weak_password_rejected(client):
     resp = client.post(
         "/auth/register",
@@ -66,7 +97,9 @@ def test_chat_returns_full_envelope(client, demo1_token, monkeypatch):
     assert body["answer"]["total"] == 2420.0
     assert body["tool_calls"] == ["finish_with_spending_summary"]
     assert body["sources"] == []
-    assert body["usage"] == {"input_tokens": 105, "output_tokens": 22, "total_tokens": 127}
+    assert body["usage"] == {
+        "input_tokens": 105, "output_tokens": 22, "total_tokens": 127, "cost_usd": None,
+    }
 
 
 def test_chat_knowledge_answer_surfaces_sources(client, demo1_token, monkeypatch):

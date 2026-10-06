@@ -19,6 +19,7 @@ class AgentResult:
     input_tokens: int = 0
     output_tokens: int = 0
     total_tokens: int = 0
+    cost_usd: float | None = None
 
 SYSTEM_INSTRUCTIONS = (
     "You are a financial assistant for a single authenticated user. "
@@ -43,6 +44,17 @@ def _add_usage(response: Response, totals: dict) -> None:
         totals["input_tokens"] += response.usage.input_tokens
         totals["output_tokens"] += response.usage.output_tokens
         totals["total_tokens"] += response.usage.total_tokens
+
+
+def _cost_usd(usage_totals: dict) -> float | None:
+    input_price = settings.openai_input_price_per_million
+    output_price = settings.openai_output_price_per_million
+    if input_price is None or output_price is None:
+        return None
+    return (
+        usage_totals["input_tokens"] * input_price
+        + usage_totals["output_tokens"] * output_price
+    ) / 1_000_000
 
 
 def ask_ai(user_message: str, previous_response_id: str | None = None) -> AgentResult:
@@ -118,6 +130,7 @@ def ask_ai(user_message: str, previous_response_id: str | None = None) -> AgentR
                 answer=finish_answer,
                 response_id=response.id,
                 tool_calls=tool_calls,
+                cost_usd=_cost_usd(usage_totals),
                 **usage_totals,
             )
 

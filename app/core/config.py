@@ -12,7 +12,13 @@ class Settings(BaseSettings):
     rag_top_k: int = 3
     jwt_secret: str
     jwt_access_token_expire_minutes: int = 60
+    jwt_refresh_token_expire_days: int = 30
     chat_rate_limit_per_minute: int = 20
+
+    # Optional - if either is left unset, UsageInfo.cost_usd stays null
+    # rather than guessing a price for whatever OPENAI_MODEL is configured.
+    openai_input_price_per_million: float | None = None
+    openai_output_price_per_million: float | None = None
 
 
 settings = Settings()  # type: ignore[call-arg]
