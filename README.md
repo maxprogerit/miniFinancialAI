@@ -110,15 +110,16 @@ A plain HTML/CSS/JS page at `/` (`static/index.html` + `app.js` +
 step, no framework). It's a thin client over the same REST API described
 below, not a second source of logic:
 
-- **Chat** - ask a question (or tap one of the example chips on the empty
-  state), see the structured answer rendered by shape (spending summary,
-  transaction table, category tags, a percentage bar for comparisons, or a
-  cited knowledge answer), plus which tools the agent called and the token
-  cost, right under the message.
+- **Assistant** - ask a question (or tap one of the example chips on the
+  empty state), see the structured answer rendered by shape (spending
+  summary, transaction table, category tags, a percentage bar for
+  comparisons, or a cited knowledge answer), with `tool:` badges under each
+  message. A side panel shows the last tool-call chain (with token cost)
+  and the raw result.
 - **Transactions** - paginated table, category filter, CSV import.
 - **Documents** - drag-and-drop (or click) upload of a `.txt`/`.pdf` note.
-- Light/dark theme toggle (follows the OS preference by default, overridable
-  per-browser via `localStorage`).
+- Single dark theme (near-black with an amber accent, Space Grotesk +
+  JetBrains Mono loaded from Google Fonts).
 
 Both the access and refresh token live in `localStorage` - consistent with
 the API using Bearer auth rather than cookies (see the CORS note below). If

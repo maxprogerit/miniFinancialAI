@@ -76,7 +76,8 @@
 
   function fmtMoney(amount, currency) {
     const n = Number(amount);
-    return `${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+    const digits = Number.isInteger(n) ? 0 : 2;
+    return `${n.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: 2 })} ${currency}`;
   }
 
   const authScreen = document.getElementById("auth-screen");
@@ -165,6 +166,9 @@
   const chatForm = document.getElementById("chat-form");
   const chatInput = document.getElementById("chat-input");
   const chatEmptyStateHtml = document.getElementById("chat-empty-state").outerHTML;
+  const inspectorCall = document.getElementById("inspector-call");
+  const inspectorResult = document.getElementById("inspector-result");
+  const inspectorCallHtml = inspectorCall.innerHTML;
 
   function clearEmptyState() {
     const emptyState = document.getElementById("chat-empty-state");
@@ -173,21 +177,24 @@
 
   function resetChat() {
     chatMessages.innerHTML = chatEmptyStateHtml;
+    inspectorCall.innerHTML = inspectorCallHtml;
+    inspectorResult.classList.add("hidden");
+    inspectorResult.innerHTML = "";
   }
 
   function addUserBubble(text) {
     clearEmptyState();
     const row = document.createElement("div");
-    row.className = "msg-row user";
-    row.innerHTML = `<div class="bubble">${escapeHtml(text)}</div><div class="avatar avatar-user">${escapeHtml((state.email || "?")[0].toUpperCase())}</div>`;
+    row.className = "msg user";
+    row.innerHTML = `<div class="bubble">${escapeHtml(text)}</div>`;
     chatMessages.appendChild(row);
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
   function addThinkingBubble() {
     const row = document.createElement("div");
-    row.className = "msg-row assistant";
-    row.innerHTML = `<div class="avatar avatar-assistant">&#9670;</div><div class="bubble thinking">Thinking <span class="typing-dots"><span></span><span></span><span></span></span></div>`;
+    row.className = "msg assistant";
+    row.innerHTML = `<div class="bubble thinking">Thinking <span class="typing-dots"><span></span><span></span><span></span></span></div>`;
     chatMessages.appendChild(row);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     return row;
@@ -205,10 +212,9 @@
     }
 
     if (answer.totals) {
-      const rows = answer.totals
-        .map((t) => `<div class="answer-stat"><span class="amount">${fmtMoney(t.total, t.currency)}</span><span class="label">total</span></div>`)
+      return answer.totals
+        .map((t) => `<div>Your total spending is <strong>${fmtMoney(t.total, t.currency)}</strong>.</div>`)
         .join("");
-      return rows;
     }
 
     if (answer.categories) {
@@ -222,7 +228,7 @@
     if (typeof answer.percentage === "number") {
       const pct = Math.min(100, Math.max(0, answer.percentage));
       return `
-        <div class="answer-stat"><span class="amount">${answer.percentage}%</span><span class="label">of total spending on ${escapeHtml(answer.category)}</span></div>
+        <div><strong>${answer.percentage}%</strong> of your spending is on ${escapeHtml(answer.category)}.</div>
         <div class="percentage-bar"><div style="width:${pct}%"></div></div>
         <div class="answer-meta">
           <span class="tag">${fmtMoney(answer.category_total, answer.currency)} / ${fmtMoney(answer.overall_total, answer.currency)}</span>
@@ -234,41 +240,75 @@
     }
 
     if (answer.total !== undefined && answer.category !== undefined) {
-      return `<div class="answer-stat">
-        <span class="amount">${fmtMoney(answer.total, answer.currency)}</span>
-        <span class="label">on ${escapeHtml(answer.category)} &middot; ${answer.transaction_count} transaction${answer.transaction_count === 1 ? "" : "s"}</span>
-      </div>`;
+      return `<div>You spent <strong>${fmtMoney(answer.total, answer.currency)}</strong> on ${escapeHtml(answer.category)} across ${answer.transaction_count} transaction${answer.transaction_count === 1 ? "" : "s"}.</div>`;
     }
 
     return `<pre>${escapeHtml(JSON.stringify(answer, null, 2))}</pre>`;
+  }
+
+  function renderInspector(body) {
+    const calls = body.tool_calls || [];
+    const callLines = calls
+      .map((name, i) => `<div class="call${i === calls.length - 1 ? " last" : ""}">${escapeHtml(name)}()</div>`)
+      .join("");
+    const meta = [`${calls.length} call${calls.length === 1 ? "" : "s"}`];
+    if (body.usage) meta.push(`${body.usage.total_tokens} tokens`);
+    inspectorCall.innerHTML = `
+      <div class="label">Last tool call</div>
+      <div class="call-list">${callLines || '<div class="call">no tools used</div>'}</div>
+      <div class="call-meta">${escapeHtml(meta.join(" · "))}</div>`;
+
+    const answer = body.answer;
+    let html = "";
+    if (answer.transactions) {
+      const rows = answer.transactions
+        .map((t) => `<div class="result-row"><span>${escapeHtml(t.merchant)}</span><span class="v">${fmtMoney(t.amount, t.currency)}</span></div>`)
+        .join("");
+      const currencies = new Set(answer.transactions.map((t) => t.currency));
+      const sum = answer.transactions.reduce((acc, t) => acc + Number(t.amount), 0);
+      const total = currencies.size === 1
+        ? `<div class="result-row total"><span>Total</span><span class="v">${fmtMoney(sum, [...currencies][0])}</span></div>`
+        : "";
+      html = `<div class="label">Transactions</div><div class="result-rows">${rows}${total}</div>`;
+    } else if (answer.reason !== undefined) {
+      html = `<div class="label">Refused</div><div class="result-text">${escapeHtml(answer.reason)}</div>`;
+    } else if (answer.sources !== undefined && answer.answer !== undefined) {
+      const sources = answer.sources.length
+        ? answer.sources.map((src) => `<div class="result-row"><span>${escapeHtml(src)}</span></div>`).join("")
+        : '<div class="result-text">No sources.</div>';
+      html = `<div class="label">Sources</div><div class="result-rows">${sources}</div>`;
+    } else {
+      const json = escapeHtml(JSON.stringify(answer, null, 2)).replace(/(&quot;[^&]*?&quot;)(:)/g, '<span class="key">$1</span>$2');
+      html = `<div class="label">Result</div><pre class="result-json">${json}</pre>`;
+    }
+    inspectorResult.innerHTML = html;
+    inspectorResult.classList.remove("hidden");
   }
 
   function replaceWithAnswer(row, body) {
     const isRefusal = body.answer && body.answer.reason !== undefined;
     const bubbleClass = isRefusal ? "bubble refusal" : "bubble";
 
-    let meta = "";
+    let badges = "";
     if (body.tool_calls && body.tool_calls.length) {
-      meta += body.tool_calls.map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("");
+      badges += body.tool_calls.map((t) => `<span class="tool-badge"><b>tool:</b>${escapeHtml(t)}</span>`).join("");
     }
     if (body.sources && body.sources.length) {
-      meta += body.sources.map((s) => `<span class="tag source">&#128196; ${escapeHtml(s)}</span>`).join("");
+      badges += body.sources.map((s) => `<span class="tool-badge source"><b>source:</b>${escapeHtml(s)}</span>`).join("");
     }
     if (body.usage) {
-      meta += `<span class="tag usage">${body.usage.total_tokens} tokens</span>`;
+      badges += `<span class="tool-badge usage">${body.usage.total_tokens} tokens</span>`;
     }
 
     row.innerHTML = `
-      <div class="avatar avatar-assistant">&#9670;</div>
-      <div class="${bubbleClass}">
-        ${renderAnswerBody(body.answer)}
-        ${meta ? `<div class="answer-meta">${meta}</div>` : ""}
-      </div>`;
+      <div class="${bubbleClass}">${renderAnswerBody(body.answer)}</div>
+      ${badges ? `<div class="badges">${badges}</div>` : ""}`;
+    renderInspector(body);
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
   function replaceWithError(row, message) {
-    row.innerHTML = `<div class="avatar avatar-assistant">&#9670;</div><div class="bubble error">${escapeHtml(message)}</div>`;
+    row.innerHTML = `<div class="bubble error">${escapeHtml(message)}</div>`;
   }
 
   chatMessages.addEventListener("click", (e) => {
@@ -410,32 +450,6 @@
     const file = e.dataTransfer.files[0];
     uploadDocument(file);
   });
-
-  const themeToggleBtn = document.getElementById("theme-toggle-btn");
-
-  function currentTheme() {
-    return (
-      document.documentElement.getAttribute("data-theme") ||
-      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-    );
-  }
-
-  function applyTheme(theme) {
-    document.documentElement.setAttribute("data-theme", theme);
-    themeToggleBtn.innerHTML =
-      theme === "dark"
-        ? '<span class="nav-icon">&#9680;</span> Light mode'
-        : '<span class="nav-icon">&#9680;</span> Dark mode';
-  }
-
-  themeToggleBtn.addEventListener("click", () => {
-    const next = currentTheme() === "dark" ? "light" : "dark";
-    localStorage.setItem("theme", next);
-    applyTheme(next);
-  });
-
-  const savedTheme = localStorage.getItem("theme");
-  applyTheme(savedTheme || currentTheme());
 
   if (state.token) {
     enterApp();
